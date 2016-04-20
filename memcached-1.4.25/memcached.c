@@ -55,7 +55,7 @@
 #endif
 #endif
 
-#define SIZE_OF_HOT_ITEMS_LIST 10
+#define SIZE_OF_HOT_ITEMS_LIST 2
 
 /*
  * forward declarations
@@ -2800,23 +2800,6 @@ static void process_stats_conns(ADD_STAT add_stats, void *c) {
             }
         }
     }
-}
-
-/*
- * get_hot_keys
- *
- * This function traverses LRU list of all slabs and generates 
- * fixed length hot keys list.
- *
- * Returns : all hot keys separated by colon
- */
-static char* get_hot_keys() {
-
-    char *data = malloc(50);
-    char *val = "hello hot key\r\n";
-    memcpy(data, val, strlen(val));
-    data[strlen(val)] = 0;
-    return data;
 }
 
 static void process_stat(conn *c, token_t *tokens, const size_t ntokens) {

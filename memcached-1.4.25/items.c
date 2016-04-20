@@ -75,6 +75,7 @@ static pthread_mutex_t lru_crawler_stats_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t lru_maintainer_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t cas_id_lock = PTHREAD_MUTEX_INITIALIZER;
 
+
 void item_stats_reset(void) {
     int i;
     for (i = 0; i < LARGEST_ID; i++) {
@@ -422,6 +423,55 @@ int do_item_replace(item *it, item *new_it, const uint32_t hv) {
 }
 
 /*@null@*/
+
+/*
+ * get_hot_keys
+ *
+ * This function traverses LRU list of all slabs and generates 
+ * fixed length hot keys list.
+ *
+ * Returns : all hot keys separated by colon
+ */
+char *get_hot_keys(void) {
+
+    /* char *data = malloc(50);
+    char *val = "hello hot key\r\n";
+    memcpy(data, val, strlen(val));
+    data[strlen(val)] = 0; */
+
+    unsigned int memlimit = 2 * 1024 * 1024;   /* 2MB max response size */
+    char *buffer;
+    static item *temp_heads[LARGEST_ID];
+    int i, j = 0;
+    int current_len = 0;
+
+    for (i = 0; i < LARGEST_ID; i++) {
+        pthread_mutex_lock(&lru_locks[i]);
+        item *iter = heads[i];
+        if (iter) {
+              temp_heads[j++] = iter;
+        }
+        pthread_mutex_unlock(&lru_locks[i]);
+    }
+
+    buffer = malloc((size_t)memlimit);
+    if (buffer == 0) {
+      return NULL;
+    }
+
+    for (i = 0; i < j; i++) {
+       item *it = temp_heads[i];
+       memcpy(buffer, ITEM_key(it), it->nkey);
+       memcpy(buffer + it->nkey, ":", 1);
+       memcpy(buffer + it->nkey + 1, ITEM_data(it), it->nbytes);
+       memcpy(buffer + it->nkey + 1 + it->nbytes, "\r\n", sizeof("\r\n"));
+       current_len += it->nkey + 1 + it->nbytes + sizeof("\r\n");
+    }
+
+    memcpy(buffer + current_len, "END\r\n", sizeof("END\r\n"));
+    return buffer;
+}
+
 /* This is walking the line of violating lock order, but I think it's safe.
  * If the LRU lock is held, an item in the LRU cannot be wiped and freed.
  * The data could possibly be overwritten, but this is only accessing the
