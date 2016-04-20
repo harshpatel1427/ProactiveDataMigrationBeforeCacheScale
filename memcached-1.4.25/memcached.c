@@ -2851,7 +2851,7 @@ static void process_stat(conn *c, token_t *tokens, const size_t ntokens) {
 	    write_and_free(c, buf, strlen(buf));
        	    return;
     } else if (strcmp(subcommand, "hjns") == 0) {
-	    //TODO: Remove this.
+	    //TODO: Remove this. Make sure
 	    char *buf =  "before\r\ninside memcache. Yo anshul!\r\n";
 	    char *data = malloc(strlen(buf)+1);
 	    memcpy(data,buf,strlen(buf));
