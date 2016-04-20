@@ -55,6 +55,8 @@
 #endif
 #endif
 
+#define SIZE_OF_HOT_ITEMS_LIST 10
+
 /*
  * forward declarations
  */
@@ -2800,6 +2802,23 @@ static void process_stats_conns(ADD_STAT add_stats, void *c) {
     }
 }
 
+/*
+ * get_hot_keys
+ *
+ * This function traverses LRU list of all slabs and generates 
+ * fixed length hot keys list.
+ *
+ * Returns : all hot keys separated by colon
+ */
+static char* get_hot_keys() {
+
+    char *data = malloc(50);
+    char *val = "hello hot key\r\n";
+    memcpy(data, val, strlen(val));
+    data[strlen(val)] = 0;
+    return data;
+}
+
 static void process_stat(conn *c, token_t *tokens, const size_t ntokens) {
     const char *subcommand = tokens[SUBCOMMAND_TOKEN].value;
     assert(c != NULL);
@@ -2826,6 +2845,19 @@ static void process_stat(conn *c, token_t *tokens, const size_t ntokens) {
         return ;
     } else if (strcmp(subcommand, "settings") == 0) {
         process_stat_settings(&append_stats, c);
+    } else if (strcmp(subcommand, "gethotkeys") == 0) {
+	    /* Gets all the hot keys from LRU from all slabs */
+	    char *buf = get_hot_keys();
+	    write_and_free(c, buf, strlen(buf));
+       	    return;
+    } else if (strcmp(subcommand, "hjns") == 0) {
+	    //TODO: Remove this.
+	    char *buf =  "before\r\ninside memcache. Yo anshul!\r\n";
+	    char *data = malloc(strlen(buf)+1);
+	    memcpy(data,buf,strlen(buf));
+	    data[strlen(buf)] = 0;
+	    write_and_free(c,data,strlen(data));
+	    return;
     } else if (strcmp(subcommand, "cachedump") == 0) {
         char *buf;
         unsigned int bytes, id, limit = 0;
