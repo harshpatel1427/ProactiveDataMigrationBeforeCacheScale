@@ -55,8 +55,6 @@
 #endif
 #endif
 
-#define SIZE_OF_HOT_ITEMS_LIST 2
-
 /*
  * forward declarations
  */
@@ -2830,12 +2828,24 @@ static void process_stat(conn *c, token_t *tokens, const size_t ntokens) {
         process_stat_settings(&append_stats, c);
     } else if (strcmp(subcommand, "gethotkeys") == 0) {
 	    /* Gets all the hot keys from LRU from all slabs */
-	    char *buf = get_hot_keys();
+            unsigned int no_of_items = 0;
+
+            if (ntokens < 4) {
+                out_string(c, "CLIENT_ERROR bad command line");
+                return;
+            }
+
+            if (!safe_strtoul(tokens[2].value, &no_of_items)) {
+                out_string(c, "CLIENT_ERROR bad command line format");
+                return;
+            }
+
+	    char *buf = get_hot_keys(no_of_items);
 	    write_and_free(c, buf, strlen(buf));
        	    return;
     } else if (strcmp(subcommand, "hjns") == 0) {
 	    //TODO: Remove this. Make sure
-	    char *buf =  "before\r\ninside memcache. Yo anshul!\r\n";
+	    char *buf =  "mykey1:myvalue1\r\nmykey2:myvalue2\r\nEND\r\n";
 	    char *data = malloc(strlen(buf)+1);
 	    memcpy(data,buf,strlen(buf));
 	    data[strlen(buf)] = 0;

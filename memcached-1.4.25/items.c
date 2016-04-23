@@ -432,18 +432,18 @@ int do_item_replace(item *it, item *new_it, const uint32_t hv) {
  *
  * Returns : all hot keys separated by colon
  */
-char *get_hot_keys(void) {
+char *get_hot_keys(unsigned int n) {
 
     /* char *data = malloc(50);
     char *val = "hello hot key\r\n";
     memcpy(data, val, strlen(val));
-    data[strlen(val)] = 0; */
+    data[strlen(val)] = 0;*/
 
     unsigned int memlimit = 2 * 1024 * 1024;   /* 2MB max response size */
     char *buffer;
     static item *temp_heads[LARGEST_ID];
     int i, j = 0;
-    int current_len = 0;
+    int current_len = 0, curr_count = 0, null_count = 0;
 
     for (i = 0; i < LARGEST_ID; i++) {
         pthread_mutex_lock(&lru_locks[i]);
@@ -456,19 +456,49 @@ char *get_hot_keys(void) {
 
     buffer = malloc((size_t)memlimit);
     if (buffer == 0) {
-      return NULL;
+        return NULL;
     }
 
-    for (i = 0; i < j; i++) {
-       item *it = temp_heads[i];
-       memcpy(buffer, ITEM_key(it), it->nkey);
-       memcpy(buffer + it->nkey, ":", 1);
-       memcpy(buffer + it->nkey + 1, ITEM_data(it), it->nbytes);
-       memcpy(buffer + it->nkey + 1 + it->nbytes, "\r\n", sizeof("\r\n"));
-       current_len += it->nkey + 1 + it->nbytes + sizeof("\r\n");
+    while (curr_count < n && null_count < j) {
+        int selected_i = 0;
+        item *selected_it = NULL;
+        null_count = 0;
+
+        for (i = 0; i < j; i++) {
+            pthread_mutex_lock(&lru_locks[i]);
+            item *it = temp_heads[i];
+            if (!it) {
+                null_count++;
+                pthread_mutex_unlock(&lru_locks[i]);
+                continue;
+            }
+            if (!selected_it) {
+                selected_it = it;
+                selected_i = i;
+            } else if (it->time > selected_it->time) {
+                selected_it = it;
+                selected_i = i;
+            }
+            pthread_mutex_unlock(&lru_locks[i]);
+        }
+
+        if (null_count == j)
+            continue;
+
+        pthread_mutex_lock(&lru_locks[selected_i]);
+        memcpy(buffer + current_len, ITEM_key(selected_it), selected_it->nkey);
+        memcpy(buffer + selected_it->nkey + current_len, ":", 1);
+        memcpy(buffer + selected_it->nkey + 1 + current_len, ITEM_data(selected_it), selected_it->nbytes);
+        memcpy(buffer + selected_it->nkey + 1 + selected_it->nbytes + current_len, "\r\n", strlen("\r\n"));
+        current_len += selected_it->nkey + 1 + selected_it->nbytes + strlen("\r\n");
+
+        temp_heads[selected_i] = selected_it->next;
+        pthread_mutex_unlock(&lru_locks[selected_i]);
+
+        curr_count++;
     }
 
-    memcpy(buffer + current_len, "END\r\n", sizeof("END\r\n"));
+    memcpy(buffer + current_len, "END\r\n", strlen("END\r\n"));
     return buffer;
 }
 
@@ -510,9 +540,10 @@ char *item_cachedump(const unsigned int slabs_clsid, const unsigned int limit, u
         /* Copy the key since it may not be null-terminated in the struct */
         strncpy(key_temp, ITEM_key(it), it->nkey);
         key_temp[it->nkey] = 0x00; /* terminate */
-        len = snprintf(temp, sizeof(temp), "ITEM %s [%d b; %lu s]\r\n",
+        len = snprintf(temp, sizeof(temp), "ITEM %s [%d b; %lu s; %lu s]\r\n",
                        key_temp, it->nbytes - 2,
-                       (unsigned long)it->exptime + process_started);
+                       (unsigned long)it->exptime + process_started,
+                       (unsigned long)it->time);
         if (bufcurr + len + 6 > memlimit)  /* 6 is END\r\n\0 */
             break;
         memcpy(buffer + bufcurr, temp, len);
