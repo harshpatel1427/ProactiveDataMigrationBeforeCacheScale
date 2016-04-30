@@ -457,6 +457,8 @@ char *get_hot_keys(unsigned int n) {
     buffer = malloc((size_t)memlimit);
     if (buffer == 0) {
         return NULL;
+    } else {
+        memset(buffer, 0, memlimit);
     }
 
     while (curr_count < n && null_count < j) {
@@ -487,10 +489,19 @@ char *get_hot_keys(unsigned int n) {
 
         pthread_mutex_lock(&lru_locks[selected_i]);
         memcpy(buffer + current_len, ITEM_key(selected_it), selected_it->nkey);
-        memcpy(buffer + selected_it->nkey + current_len, ":", 1);
-        memcpy(buffer + selected_it->nkey + 1 + current_len, ITEM_data(selected_it), selected_it->nbytes);
-        memcpy(buffer + selected_it->nkey + 1 + selected_it->nbytes + current_len, "\r\n", strlen("\r\n"));
-        current_len += selected_it->nkey + 1 + selected_it->nbytes + strlen("\r\n");
+        current_len += selected_it->nkey;
+        memcpy(buffer + current_len, ":", 1);
+        current_len += 1;
+        memcpy(buffer + current_len, ITEM_data(selected_it), selected_it->nbytes - strlen("\r\n"));
+        current_len += (selected_it->nbytes - strlen("\r\n"));
+        memcpy(buffer + current_len, ":", 1);
+        current_len += 1;
+        char time[50];
+        sprintf(time, "%d", selected_it->time);
+        memcpy(buffer + current_len, time, strlen(time));
+        current_len += strlen(time);
+        memcpy(buffer + current_len, "\r\n", strlen("\r\n"));
+        current_len += strlen("\r\n");
 
         temp_heads[selected_i] = selected_it->next;
         pthread_mutex_unlock(&lru_locks[selected_i]);
