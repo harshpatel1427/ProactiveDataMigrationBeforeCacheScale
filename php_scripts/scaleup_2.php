@@ -22,7 +22,7 @@ $c1->addServer($server4, 11211);
 
 echo "calling zipf.py to generate distribution ";
 
-$zipf_string = file_get_contents('anshul.txt');
+$zipf_string = file_get_contents('trace.txt');
 $zipf_array = array_map('intval', explode(' ', $zipf_string));
 
 $count = count($zipf_array);
