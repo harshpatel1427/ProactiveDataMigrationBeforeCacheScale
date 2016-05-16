@@ -425,19 +425,14 @@ int do_item_replace(item *it, item *new_it, const uint32_t hv) {
 /*@null@*/
 
 /*
- * get_hot_keys
+ * get_hot_keys: traverses LRU list of all slabs and generates 
+ *		 a list of specified number of hot keys
+ * @n:		 number of hot keys
  *
- * This function traverses LRU list of all slabs and generates 
- * fixed length hot keys list.
- *
- * Returns : all hot keys separated by colon
+ * Returns list of n hot keys in following format:
+ * key:value:access_time
  */
 char *get_hot_keys(unsigned int n) {
-
-    /* char *data = malloc(50);
-    char *val = "hello hot key\r\n";
-    memcpy(data, val, strlen(val));
-    data[strlen(val)] = 0;*/
 
     unsigned int memlimit = 2 * 1024 * 1024;   /* 2MB max response size */
     char *buffer;
@@ -445,6 +440,14 @@ char *get_hot_keys(unsigned int n) {
     int i, j = 0;
     int current_len = 0, curr_count = 0, null_count = 0;
 
+    /**
+     * heads is an array of pointers to head of per slab LRU list
+     * i.e. heads[i] points to the head of i'th slab's LRU list
+     * we create a list of non-empty heads in temp_heads
+     *
+     * PS: It is imperative to acquire per slab lru_locks, before
+     *	   accessing LRU list
+     */
     for (i = 0; i < LARGEST_ID; i++) {
         pthread_mutex_lock(&lru_locks[i]);
         item *iter = heads[i];
@@ -461,6 +464,16 @@ char *get_hot_keys(unsigned int n) {
         memset(buffer, 0, memlimit);
     }
 
+    /**
+     * This loop goes till both conditions are true:
+     * a) current count < required number of hot keys
+     * b) head of atleast one slab's LRU is not NULL
+     *
+     * Recently accessed item is at head of LRU. this loop
+     * will merge the sorted list to get n hot items
+     *
+     * j denotes the number of slabs with non-empty heads
+     */
     while (curr_count < n && null_count < j) {
         int selected_i = 0;
         item *selected_it = NULL;
@@ -474,6 +487,7 @@ char *get_hot_keys(unsigned int n) {
                 pthread_mutex_unlock(&lru_locks[i]);
                 continue;
             }
+	    /* selected_it is the item with largest access time */
             if (!selected_it) {
                 selected_it = it;
                 selected_i = i;
@@ -484,9 +498,14 @@ char *get_hot_keys(unsigned int n) {
             pthread_mutex_unlock(&lru_locks[i]);
         }
 
+	/**
+         * This is true when all the items from every slabs
+         * have been traversed once
+         */
         if (null_count == j)
             continue;
 
+	/* merge the details of selected_item in output buffer */
         pthread_mutex_lock(&lru_locks[selected_i]);
         memcpy(buffer + current_len, ITEM_key(selected_it), selected_it->nkey);
         current_len += selected_it->nkey;

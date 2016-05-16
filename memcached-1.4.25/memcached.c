@@ -2827,30 +2827,25 @@ static void process_stat(conn *c, token_t *tokens, const size_t ntokens) {
     } else if (strcmp(subcommand, "settings") == 0) {
         process_stat_settings(&append_stats, c);
     } else if (strcmp(subcommand, "gethotkeys") == 0) {
-	    /* Gets all the hot keys from LRU from all slabs */
-            unsigned int no_of_items = 0;
+        /**
+	 * This is to get specified number of hot keys
+	 * from global LRU
+	 */
+	unsigned int no_of_items = 0;
 
-            if (ntokens < 4) {
-                out_string(c, "CLIENT_ERROR bad command line");
-                return;
-            }
+	if (ntokens < 4) {
+		out_string(c, "CLIENT_ERROR bad command line");
+		return;
+	}
 
-            if (!safe_strtoul(tokens[2].value, &no_of_items)) {
-                out_string(c, "CLIENT_ERROR bad command line format");
-                return;
-            }
+	if (!safe_strtoul(tokens[2].value, &no_of_items)) {
+		out_string(c, "CLIENT_ERROR bad command line format");
+		return;
+	}
 
-	    char *buf = get_hot_keys(no_of_items);
-	    write_and_free(c, buf, strlen(buf));
-       	    return;
-    } else if (strcmp(subcommand, "hjns") == 0) {
-	    //TODO: Remove this. Make sure
-	    char *buf =  "mykey1:myvalue1\r\nmykey2:myvalue2\r\nEND\r\n";
-	    char *data = malloc(strlen(buf)+1);
-	    memcpy(data,buf,strlen(buf));
-	    data[strlen(buf)] = 0;
-	    write_and_free(c,data,strlen(data));
-	    return;
+	char *buf = get_hot_keys(no_of_items);
+	write_and_free(c, buf, strlen(buf));
+	return;
     } else if (strcmp(subcommand, "cachedump") == 0) {
         char *buf;
         unsigned int bytes, id, limit = 0;
