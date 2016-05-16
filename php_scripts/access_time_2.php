@@ -1,5 +1,20 @@
 <?php
 
+/**
+ * Minimum average access time - with migration
+ *
+ * This policy selectes a server to scale down on the basis
+ * on minimum average access time. To get this value we follow
+ * below mentioned procedure
+ * a) Select a default cluster with 4 servers
+ * b) Set keys from first p% of trace - called warmup period
+ * c) Get 'n' number of hot keys from all servers
+ * d) Find one server with minimum average access time
+ * e) Migrate 'n' number of hot keys from selected server
+ * f) Remove this server and check performance for next (1-p)%
+ *      of trace after migration
+ */
+
 $server1 = '104.196.102.223';
 $server2 = '104.196.35.22';
 $server3 = '104.196.38.180';
@@ -125,8 +140,6 @@ foreach($result as $kvpair) {
     if ($kvpair == "END\r")
         break;
     $parsed_str = explode(":", $kvpair);
-//            print "key is: ".$parsed_str[0]."<br>";
-//          print "value is: ".$parsed_str[1]."<br>";
     $currCluster->set($parsed_str[0], $parsed_str[1]);
 }
 
@@ -168,7 +181,6 @@ fclose($fh);
 total execution time = (end time) - (start time) + performance penalty (8ms in this case)
 */
 $responseTime = microtime(true) + 0.008*$post_migration_miss - $avgStartTime;
-//$avgResponseTime = $responseTime / $count;
 $avgResponseTime = $responseTime / ($count - $p);
 
 echo "Before migration of hot keys, per request avg response time = ".$avgResponseTime."<br>";
@@ -177,9 +189,6 @@ echo "After migration of hot keys, hits = ".$post_migration_hits."<br>";
 echo "After migration of hot keys, miss = ".$post_migration_miss."<br>";
 
 /*Now compare efficiency of hits and miss*/
-
-//echo "<br>% hits after migration = ".($post_migration_hits*100/$count);
-//echo "<br>% miss after migration = ".($post_migration_miss*100/$count);
 echo "<br>% hits after migration = ".($post_migration_hits*100/ ($count - $p));
 echo "<br>% miss after migration = ".($post_migration_miss*100/ ($count - $p));
 ?>

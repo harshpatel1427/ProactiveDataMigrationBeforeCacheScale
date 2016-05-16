@@ -1,5 +1,20 @@
 <?php
 
+/**
+ * Minimum average access time - Baseline (without migration)
+ *
+ * This policy selectes a server to scale down on the basis
+ * on minimum average access time. To get this value we follow
+ * below mentioned procedure
+ * a) Select a default cluster with 4 servers
+ * b) Set keys from first p% of trace - called warmup period
+ * c) Get 'n' number of hot keys from all servers
+ * d) Find one server with minimum average access time
+ * e) Remove this server and check performance for next (1-p)%
+ *	of trace WITHOUT migration
+ */
+
+/* creating clusters */
 $server1 = '104.196.102.223';
 $server2 = '104.196.35.22';
 $server3 = '104.196.38.180';
@@ -48,6 +63,7 @@ $p = $count * 0.6;
 $noDist = array(); //array to determine frequency of each number of zipf dist
 $currCluster = $c0; //c0 has all the servers
 
+/* warm up period starts here */
 for($x = 0; $x < $p; $x++) {
 	$currCluster->set("key_".$zipf_array[$x], "value_".$zipf_array[$x]) or die("Couldn't save anything to memcached $x and count is $count...<br />");
 }
@@ -107,10 +123,6 @@ if ($minIndex == 1) {
         echo "No matching server.";
 }
 
-//below 2 lines are fore debugging. Remove it later
-//$minServer = $server1;
-//$currCluster = $c1;
-
 echo "The cluster has been changed by removing $minServer<br>";
 
 /* Do get operation without migrating hot keys */
@@ -146,12 +158,11 @@ for ($x = $p; $x < $count; $x++) {
    }
 }
 fclose($fh);
+
 /*
 total execution time = (end time) - (start time) + performance penalty (8ms in this case)
 */
-
 $responseTime = microtime(true) + 0.008*$pre_migration_miss - $avgStartTime;
-//$avgResponseTime = $responseTime / $count;
 $avgResponseTime = $responseTime / ($count - $p);
 
 echo "Before migration of hot keys, per request avg response time = ".$avgResponseTime."<br>";
@@ -160,8 +171,6 @@ echo "Before migration of hot keys, hits = ".$pre_migration_hits."<br>";
 echo "Before migration of hot keys, miss = ".$pre_migration_miss."<br>";
 
 /*Now compare efficiency of hits and miss*/
-//echo "<br>% hits before migration = ".($pre_migration_hits*100/$count);
-//echo "<br>% miss before migration = ".($pre_migration_miss*100/$count);
 echo "<br>% hits before migration = ".($pre_migration_hits*100/ ($count - $p));
 echo "<br>% miss before migration = ".($pre_migration_miss*100/ ($count - $p));
 ?>

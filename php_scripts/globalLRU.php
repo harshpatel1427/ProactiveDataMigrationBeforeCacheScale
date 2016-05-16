@@ -1,5 +1,21 @@
 <?php
 
+/**
+ * GlobalLRU - with migration
+ *
+ * This policy selectes a server having minimum number of keys
+ * accessed in last 5 sec / 15 sec window. To get this, we follow
+ * below mentioned procedure
+ * a) Select a default cluster with 4 servers
+ * b) Set keys from first p% of trace - called warmup period
+ * c) Get number of keys accessed in last 5 sec / 15 sec window
+ * d) Find one server with minimum number of such keys
+ * e) Get 'n' number of hot keys from selected server and 
+ *	perform pro-active data migration for these hot keys
+ * d) Remove this server and check performance for next (1-p)%
+ *      of trace after migration
+ */
+
 $server1 = '104.196.102.223';
 $server2 = '104.196.35.22';
 $server3 = '104.196.38.180';

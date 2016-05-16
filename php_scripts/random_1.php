@@ -1,6 +1,19 @@
 
 <?php
 
+/**
+ * Random policy - Baseline (without migration)
+ *
+ * This policy randomly selectes a server to scale down.
+ * We follow below mentioned procedure
+ * a) Select a default cluster with 4 servers
+ * b) Set keys from first p% of trace - called warmup period
+ * c) Select one server randomly and save the selected configuration
+ *	so that it can be used in random policy - with migration
+ * d) Remove this server and check performance for next (1-p)%
+ *      of trace WITHOUT migration
+ */
+
 $server1 = '104.196.102.223';
 $server2 = '104.196.35.22';
 $server3 = '104.196.38.180';

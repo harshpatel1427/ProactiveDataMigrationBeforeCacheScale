@@ -1,5 +1,20 @@
 <?php
 
+/**
+ * Scale up - with pro-active data population
+ *
+ * This policy gets 'n' hot keys from each server and cheks if
+ * it belongs to new server to be added in new cluster.
+ * We follow below mentioned procedure
+ * a) Select a default cluster with 3 servers
+ * b) Set keys from first p% of trace - called warmup period
+ * c) Get 'n' hot keys from each server
+ * d) Check if this key would be mapped to server4 as per new cluster
+ *      using getServerByKey. If so, then populate the key to server4
+ * e) Change cluster to the one with 4 servers
+ * f) Check performance for next (1-p)% of trace after data population
+ */
+
 $server1 = '104.196.102.223';
 $server2 = '104.196.35.22';
 $server3 = '104.196.38.180';
