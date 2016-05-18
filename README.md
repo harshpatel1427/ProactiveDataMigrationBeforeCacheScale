@@ -40,10 +40,10 @@
 	b) access_time_2.php: Minimum average access time policy with migration
 	c) random_1.php: Random policy without migration
 	d) random_2.php: Random policy with migration
-	e) globalLRU_baseline.php: Global LRU baseline policy for scale down without migration
-	f) globalLRU.php: Global LRU policy for scale down with migration
-	g) globalMain.php: Threaded version of global LRU for scale down (warm up and observation)
-	h) globalMigration.php: Threaded version of global LRU for scale down (migration)
+	e) globalLRU_1.php: Global LRU baseline policy for scale down without migration
+	f) globalLRU_2.php: Global LRU policy for scale down with migration
+	g) globalLRU_Main_threads_1.php: Threaded version of global LRU for scale down (warm up and observation)
+	h) globalLRU_Migration_threads_1.php: Threaded version of global LRU for scale down (migration)
 	i) scaleup_1.php: Global LRU for scale up without data population
 	j) scaleup_2.php: Global LRU for scale up with data population
 
