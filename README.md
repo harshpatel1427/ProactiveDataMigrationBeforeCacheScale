@@ -52,4 +52,7 @@
 	- items.h:	added declaration of get_hot_keys API
 	- memcached.c:	how to call get_hot_keys
 
+## MODIFICATION IN PHP.INI
+	In file '/etc/php5/apache2/php.ini', change max_execution_time = 300.
+	This is because our experiments takes longer time than default timeout settings.
 	
