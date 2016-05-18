@@ -43,7 +43,7 @@
 	e) globalLRU_1.php: Global LRU baseline policy for scale down without migration
 	f) globalLRU_2.php: Global LRU policy for scale down with migration
 	g) globalLRU_Main_threads_1.php: Threaded version of global LRU for scale down (warm up and observation)
-	h) globalLRU_Migration_threads_1.php: Threaded version of global LRU for scale down (migration)
+	h) globalLRU_Migration_threads_2.php: Threaded version of global LRU for scale down (migration)
 	i) scaleup_1.php: Global LRU for scale up without data population
 	j) scaleup_2.php: Global LRU for scale up with data population
 
