@@ -4,7 +4,7 @@
  *		Proactive Data Migration Before CacheScale
  *
  *				Submitted By
- *    Harsh Kumar Patel, Jasmit Kaur Saluja, Nirmit Desai, Shubhada Patil
+ *    Harshkumar Patel, Jasmit Kaur Saluja, Nirmit Desai, Shubhada Patil
  *
  *		Under the guidance of - Prof. Anshul Gandhi
  *****************************************************************************/
